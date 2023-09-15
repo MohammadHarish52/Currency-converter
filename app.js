@@ -163,7 +163,10 @@ let country_code = {
 // Displaying country-list.js.
 
 const dropList = document.querySelectorAll(".drop-list select");
+const fromCurrency = document.querySelector(".from select");
+const toCurrency = document.querySelector(".to select");
 const getButton = document.querySelector("form button");
+const api = `2b18614f52be432ab955f121`;
 
 for (let i = 0; i < dropList.length; i++) {
   for (currency_code in country_code) {
@@ -178,9 +181,66 @@ for (let i = 0; i < dropList.length; i++) {
     // inserting options tags inside select tag
     dropList[i].insertAdjacentHTML("beforeend", optionTag);
   }
+  dropList[i].addEventListener("change", (e) => {
+    loadFlag(e.target); // calling loadflag with passing target element as an argument
+  });
 }
+
+function loadFlag(element) {
+  for (code in country_code) {
+    if (code == element.value) {
+      // if currency code of country is equal to option value
+      let imgTag = element.parentElement.querySelector("img");
+      // selecting img tag of particular droplist
+      // changing the url based on the code
+      imgTag.src = `https://flagsapi.com/${country_code[code]}/flat/64.png`;
+    }
+  }
+}
+window.addEventListener("load", () => {
+  getExchangeRate();
+});
 
 getButton.addEventListener("click", (e) => {
   e.preventDefault();
   getExchangeRate();
 });
+
+const exchangeIcon = document.querySelector(" .drop-list .icon ");
+exchangeIcon.addEventListener("click", (e) => {
+  //swaping values on icon click
+  [fromCurrency.value, toCurrency.value] = [
+    toCurrency.value,
+    fromCurrency.value,
+  ];
+  // swaping flags by passing the changed value
+  loadFlag(fromCurrency);
+  loadFlag(toCurrency);
+  getExchangeRate();
+});
+
+function getExchangeRate() {
+  const amount = document.querySelector(".amount input");
+  let exchangeRatetxt = document.querySelector(".exchange-rate");
+  let amountVal = amount.value;
+  if (amountVal == "" || amountVal == "0") {
+    amount.value = "1";
+    amountVal = 1;
+  }
+  exchangeRatetxt.innerHTML = `Getting Exchange rate...`;
+  let url = ` https://v6.exchangerate-api.com/v6/${api}/latest/${fromCurrency.value}`;
+  fetch(url).then((response) =>
+    response
+      .json()
+      .then((result) => {
+        let exchangeRate = result.conversion_rates[toCurrency.value];
+        console.log(exchangeRate);
+        let totalExchangeRate = (amountVal * exchangeRate).toFixed(2);
+
+        exchangeRatetxt.innerHTML = `${amountVal} ${fromCurrency.value} = ${totalExchangeRate} ${toCurrency.value} `;
+      })
+      .catch(() => {
+        exchangeRatetxt.innerHTML = `Something Went wrong`;
+      })
+  );
+}
